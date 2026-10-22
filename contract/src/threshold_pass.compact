@@ -1,0 +1,98 @@
+// ThresholdPass — private proof-of-threshold (e.g. proof-of-solvency) on Midnight.
+// Copyright 2026 Genie (an AI agent) — built for the Midnight Buildathon.
+// SPDX-License-Identifier: Apache-2.0
+//
+// Flow
+//   1. An issuer (auditor, exchange, bank, payroll provider...) deploys the
+//      contract with a public policy threshold, e.g. "balance >= 10,000".
+//   2. Off-chain, the issuer learns a holder's real value and gives the holder
+//      a credential { value, salt }. On-chain it only inserts a hiding
+//      commitment H(value, salt, holderPk) into a HistoricMerkleTree.
+//   3. The holder proves, in zero knowledge, that they own *some* issued
+//      credential whose value is >= the current threshold. The ledger learns
+//      only "one more holder passed" plus an unlinkable pass ticket. It never
+//      learns the value, the salt, the holder key, or which credential was used.
+//   4. A verifier (lender, DAO, marketplace) that receives the ticket out of
+//      band checks it on the public ledger: passTickets[ticket] == threshold.
+
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+// ---------------------------------------------------------------- public state
+export ledger issuerPk: Bytes<32>;                          // derived issuer identity
+export ledger threshold: Uint<64>;                          // public policy minimum
+export ledger policyVersion: Counter;                       // bumps on every policy change
+export ledger credentials: HistoricMerkleTree<16, Bytes<32>>; // hidden commitments
+export ledger issuedCount: Counter;
+export ledger passTickets: Map<Bytes<32>, Uint<64>>;        // nullifier -> threshold proven
+export ledger passCount: Counter;
+
+// ---------------------------------------------------------------- private state
+// Supplied by the caller's local private state; never written to the ledger.
+witness secretKey(): Bytes<32>;
+witness credentialValue(): Uint<64>;
+witness credentialSalt(): Bytes<32>;
+witness credentialPath(leaf: Bytes<32>): MerkleTreePath<16, Bytes<32>>;
+
+constructor(minimum: Uint<64>) {
+  issuerPk = disclose(derivePk(secretKey()));
+  threshold = disclose(minimum);
+  policyVersion.increment(1);
+}
+
+// ---------------------------------------------------------------- pure helpers
+export pure circuit derivePk(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "tpass:pk:"), sk]);
+}
+
+export pure circuit credentialCommitment(value: Uint<64>, salt: Bytes<32>, holderPk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>(
+    [pad(32, "tpass:cred:"), (value as Field) as Bytes<32>, salt, holderPk]);
+}
+
+// Domain-separated from the commitment and keyed by the holder secret, so a
+// ticket cannot be linked to a credential or to the holder's public key.
+export pure circuit passNullifier(sk: Bytes<32>, version: Uint<64>, minimum: Uint<64>): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>(
+    [pad(32, "tpass:nul:"), sk, (version as Field) as Bytes<32>, (minimum as Field) as Bytes<32>]);
+}
+
+// ---------------------------------------------------------------- issuer circuits
+circuit assertIssuer(): [] {
+  assert(issuerPk == derivePk(secretKey()), "Only the issuer can do this");
+}
+
+export circuit issueCredential(commitment: Bytes<32>): [] {
+  assertIssuer();
+  credentials.insert(disclose(commitment));
+  issuedCount.increment(1);
+}
+
+export circuit setThreshold(minimum: Uint<64>): [] {
+  assertIssuer();
+  threshold = disclose(minimum);
+  policyVersion.increment(1);
+}
+
+// ---------------------------------------------------------------- holder circuit
+export circuit proveThreshold(): Bytes<32> {
+  const sk = secretKey();
+  const value = credentialValue();
+  const leaf = credentialCommitment(value, credentialSalt(), derivePk(sk));
+  const path = credentialPath(leaf);
+
+  // Bind the Merkle path to *this* caller's credential, then check it was issued.
+  assert(path.leaf == leaf, "Path does not belong to this credential");
+  assert(credentials.checkRoot(disclose(merkleTreePathRoot<16, Bytes<32>>(path))),
+         "Credential was not issued by this contract");
+
+  // The only fact about the value that becomes public: it passed.
+  assert(disclose(value >= threshold), "Value is below the threshold");
+
+  const ticket = disclose(passNullifier(sk, policyVersion.read() as Uint<64>, threshold));
+  assert(!passTickets.member(ticket), "Already proven under this policy");
+  passTickets.insert(ticket, threshold);
+  passCount.increment(1);
+  return ticket;
+}

@@ -1,0 +1,62 @@
+# Local compile + test evidence (Genie's build box, 2026-10-22 20:55 MYT, UTC+8)
+$ compact --version
+compact 0.5.3
+$ compact compile --version
+0.35.0 (debb05f94 2026-09-29)
+$ compact compile --language-version
+0.27.0
+$ compact compile --runtime-version
+0.20.0
+$ rm -rf contract/src/managed && npm run compact
+> threshold-pass@0.1.0 compact
+> compact compile contract/src/threshold_pass.compact contract/src/managed/threshold_pass
+Compiling 3 circuits:
+exit code: 0
+$ ls -la contract/src/managed/threshold_pass/keys contract/src/managed/threshold_pass/zkir
+ 
+ 
+4096 .
+4096 ..
+2823916 issueCredential.prover
+2119 issueCredential.verifier
+9998113 proveThreshold.prover
+2119 proveThreshold.verifier
+2820261 setThreshold.prover
+2119 setThreshold.verifier
+ 
+ 
+ 
+4096 .
+4096 ..
+349 issueCredential.bzkir
+5668 issueCredential.zkir
+1027 proveThreshold.bzkir
+14742 proveThreshold.zkir
+204 setThreshold.bzkir
+3157 setThreshold.zkir
+$ (cd keys && sha256sum *.verifier)
+3cf96c53f975eaf03654ed94cc1db13f44e4c7dd95896f0365dc682ae0a9832b  issueCredential.verifier
+f0703f06420fc2439edecb085e0886130c6acb4545107aa88ce7e8694bc15b7e  proveThreshold.verifier
+d67db81ac52f42f3b4dba7c1d6a2c76f235d2ea500611ef3e8b21f64294800ee  setThreshold.verifier
+$ npm run typecheck && npm test
+> threshold-pass@0.1.0 typecheck
+> tsc --noEmit
+> threshold-pass@0.1.0 test
+> vitest run
+ RUN  v4.1.12 /workspace/repos/threshold-pass
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > initialises the public ledger from the constructor 51ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > lets only the issuer issue credentials 30ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > accepts a holder whose private value meets the threshold 45ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > rejects a holder whose private value is below the threshold 35ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > rejects a credential the issuer never issued (forged value) 28ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > rejects someone using another holder's credential (path bound to caller key) 31ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > prevents double-proving under the same policy (nullifier) 48ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > re-opens proving with a fresh ticket after the policy changes 70ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > lets only the issuer change the threshold 14ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > hides which credential was used among many (Merkle membership) 45ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > ticket is unknown to the verifier until shown 13ms
+ ✓ contract/src/test/threshold-pass.test.ts > ThresholdPass contract (compiled Compact, simulated ledger) > pure circuits are deterministic and domain-separated 16ms
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  20:56:12
+   Duration  832ms (transform 91ms, setup 0ms, import 175ms, tests 430ms, environment 0ms)

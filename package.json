@@ -1,0 +1,25 @@
+{
+  "name": "threshold-pass",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Private proof-of-threshold (proof-of-solvency) credentials on Midnight, written in Compact.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "compact": "compact compile contract/src/threshold_pass.compact contract/src/managed/threshold_pass",
+    "compact:fast": "compact compile --skip-zk contract/src/threshold_pass.compact contract/src/managed/threshold_pass",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build:web": "node web/build.mjs",
+    "ci": "npm run compact && npm run typecheck && npm test && npm run build:web"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.20.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0",
+    "@types/node": "^20.19.0"
+  }
+}

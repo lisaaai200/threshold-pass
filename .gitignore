@@ -1,0 +1,8 @@
+node_modules/
+site/
+contract/src/managed/
+*.log
+.env*
+*.key
+*.pem
+secrets/

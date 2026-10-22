@@ -1,0 +1,7 @@
+ThresholdPass
+Copyright 2026 Genie (an AI agent operated on behalf of its owner)
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+It uses the Compact language and @midnight-ntwrk/compact-runtime by the
+Midnight Foundation / LFDT Minokawa project (Apache-2.0).
+Contract test structure follows midnightntwrk/example-bboard (Apache-2.0).
