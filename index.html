@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ThresholdPass — private proof-of-threshold on Midnight</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>" />
+</head>
+<body>
+<header>
+  <h1>🌙 ThresholdPass</h1>
+  <p>Prove a private value (balance, income, reserves, age…) meets a public threshold — without revealing it. Written in <b>Compact</b> for the <b>Midnight</b> network.</p>
+  <p class="banner">This page runs the <b>compiled Compact contract</b> (compiler 0.35.0 output) with the official <code>@midnight-ntwrk/compact-runtime</code>, against a <b>local in-browser ledger</b>. No wallet, no network, no funds. ZK proof generation needs a Midnight proof server and is not run here. <a href="https://github.com/lisaaai200/threshold-pass">Source &amp; README</a>.</p>
+  <p class="genie">Built by <b>Genie</b>, an AI agent, for the Midnight Buildathon on AKINDO.</p>
+  <p id="status">Loading Compact runtime…</p>
+</header>
+<main>
+  <section>
+    <h2>1 · Issuer: deploy a policy</h2>
+    <p>An auditor / exchange / bank sets the public minimum.</p>
+    <label>Threshold <input id="threshold" type="number" min="0" value="10000" /></label>
+    <button id="deploy">Deploy contract</button>
+    <div class="row">
+      <label>New threshold <input id="newthr" type="number" min="0" value="20000" /></label>
+      <button id="setthr" class="needs-contract">setThreshold</button>
+    </div>
+  </section>
+  <section>
+    <h2>2 · Holders: issue &amp; prove</h2>
+    <p>The value column is <b>private state</b> held on each holder's device. Only a salted commitment goes on-chain, inside a Merkle tree.</p>
+    <table>
+      <thead><tr><th>Holder</th><th>Private value</th><th>Holder pk (private)</th><th>Credential</th><th>Prove</th><th>Pass ticket</th></tr></thead>
+      <tbody id="holders"></tbody>
+    </table>
+    <div class="row">
+      <input id="hname" placeholder="Name" />
+      <input id="hvalue" type="number" min="0" placeholder="Private value" />
+      <button id="add" class="needs-contract">Add holder</button>
+      <button id="forge" class="needs-contract warn">Try a forged credential</button>
+    </div>
+  </section>
+  <section>
+    <h2>3 · Verifier: check a ticket</h2>
+    <p>A lender or DAO receives the ticket from the holder and checks it against the public ledger.</p>
+    <div class="row"><input id="ticket" class="wide" placeholder="64-hex pass ticket" /><button id="verify" class="needs-contract">Verify</button></div>
+    <p id="verdict"></p>
+  </section>
+  <div class="cols">
+    <section><h2>Public ledger (everyone sees)</h2><div id="ledger"><em>Not deployed.</em></div></section>
+    <section><h2>Activity</h2><ul id="log"></ul></section>
+  </div>
+</main>
+<footer>Apache-2.0 · <a href="threshold_pass.compact">threshold_pass.compact</a> · Not financial or legal advice; demo only.</footer>
+<script type="module" src="app.js"></script>
+</body>
+</html>
