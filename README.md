@@ -106,6 +106,8 @@ npm test                           # 12 tests, compiled circuits on a simulated 
 npm run build:web && npx serve site   # or: python3 -m http.server -d site
 ```
 
+The live demo is the output of `npm run build:web`, published on the `gh-pages` branch.
+
 Expected compiler output: `Compiling 3 circuits:` (`issueCredential`, `setThreshold`, `proveThreshold`), with keys in `contract/src/managed/threshold_pass/keys/`.
 
 ### What the tests cover (`contract/src/test/threshold-pass.test.ts`)
